@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/fehmikaya/node-todo-api/issues"
   },
-  "homepage": "https://github.com/fehmikaya/node-todo-api#readme"
+  "homepage": "https://github.com/fehmikaya/node-todo-api#readme",
+  "dependencies": {
+    "mongodb": "^3.1.7"
+  }
 }
