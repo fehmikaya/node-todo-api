@@ -1,8 +1,8 @@
 // const MongoClient = require('mongodb').MongoClient;
-const {MongoClient, ObjectID} = require('mongodb');
+const { MongoClient, ObjectID } = require('mongodb');
 
 MongoClient.connect('mongodb://localhost:27017', (err, client) => {
-  if(err){
+  if (err) {
     return console.log(err);
   }
   console.log('Connected');
@@ -23,17 +23,17 @@ MongoClient.connect('mongodb://localhost:27017', (err, client) => {
   db.collection('Users').findOneAndUpdate({
     _id: new ObjectID('5bbf2d07dbbb04104c38fd83')
   }, {
-    $set: {
-      name: 'Andrew'
-    },
-    $inc: {
-      age: 1
-    }
-  }, {
-    returnOriginal: false
-  }).then((result) => {
-    console.log(result);
-  });
+      $set: {
+        name: 'Andrew'
+      },
+      $inc: {
+        age: 1
+      }
+    }, {
+      returnOriginal: false
+    }).then((result) => {
+      console.log(result);
+    });
 
   client.close();
 });
