@@ -43,8 +43,22 @@ UserSchema.methods.generateAuthToken = function () {
     var user = this;
     var access = 'auth';
     var token = jwt.sign({ _id: user._id.toHexString(), access }, 'abc123').toString();
+
     user.tokens.push({ access, token });
-    return token;
+
+    return user.save().then(() => {
+        return token;
+    });
+};
+
+UserSchema.methods.removeToken = function (token) {
+    var user = this;
+
+    return user.update({
+        $pull: {
+            tokens: { token }
+        }
+    });
 };
 
 UserSchema.statics.findByToken = function (token) {
@@ -61,6 +75,27 @@ UserSchema.statics.findByToken = function (token) {
         '_id': decoded._id,
         'tokens.token': token,
         'tokens.access': 'auth'
+    });
+};
+
+UserSchema.statics.findByCredentials = function (email, password) {
+    var User = this;
+
+    return User.findOne({ email }).then((user) => {
+        if (!user) {
+            return Promise.reject();
+        }
+
+        return new Promise((resolve, reject) => {
+            // Use bcrypt.compare to compare password and user.password
+            bcrypt.compare(password, user.password, (err, res) => {
+                if (res) {
+                    resolve(user);
+                } else {
+                    reject();
+                }
+            });
+        });
     });
 };
 
