@@ -14,15 +14,17 @@ var { User } = require('./models/user');
 var { authenticate } = require('./middleware/authenticate');
 
 var app = express();
+
 //Port set in config.js
 const port = process.env.PORT;
 
 app.use(bodyParser.json());
 
 //Add a todo
-app.post('/todos', (req, res) => {
+app.post('/todos', authenticate, (req, res) => {
     var todo = new Todo({
-        text: req.body.text
+        text: req.body.text,
+        creator: req.user._id
     });
 
     todo.save().then((doc) => {
@@ -33,8 +35,10 @@ app.post('/todos', (req, res) => {
 });
 
 //Get all todos
-app.get('/todos', (req, res) => {
-    Todo.find().then((todos) => {
+app.get('/todos', authenticate, (req, res) => {
+    Todo.find({
+        creator: req.user._id
+    }).then((todos) => {
         res.send({ todos });
     }, (err) => {
         res.status(400).send(err);
@@ -42,7 +46,7 @@ app.get('/todos', (req, res) => {
 });
 
 //Get a todo with ID
-app.get('/todos/:id', (req, res) => {
+app.get('/todos/:id', authenticate, (req, res) => {
     var id = req.params.id;
 
     //mongodb ObjectID validator
@@ -50,11 +54,13 @@ app.get('/todos/:id', (req, res) => {
         return res.status(404).send();
     }
 
-    Todo.findById(id).then((todo) => {
+    Todo.findOne({
+        _id: id,
+        creator: req.user._id
+    }).then((todo) => {
         if (!todo) {
             return res.status(404).send();
         }
-
         res.send({ todo });
     }).catch((e) => {
         res.status(400).send();
@@ -62,14 +68,17 @@ app.get('/todos/:id', (req, res) => {
 });
 
 //Delete a todo with ID
-app.delete('/todos/:id', (req, res) => {
+app.delete('/todos/:id', authenticate, (req, res) => {
     var id = req.params.id;
 
     if (!ObjectID.isValid(id)) {
         return res.status(404).send();
     }
 
-    Todo.findByIdAndRemove(id).then((todo) => {
+    Todo.findOneAndRemove({
+        _id: id,
+        creator: req.user._id
+    }).then((todo) => {
         if (!todo) {
             return res.status(404).send();
         }
@@ -81,7 +90,7 @@ app.delete('/todos/:id', (req, res) => {
 });
 
 //Update a todo with ID
-app.patch('/todos/:id', (req, res) => {
+app.patch('/todos/:id', authenticate, (req, res) => {
     var id = req.params.id;
     //Update only necessary params
     var body = _.pick(req.body, ['text', 'completed']);
@@ -98,15 +107,14 @@ app.patch('/todos/:id', (req, res) => {
         body.completedAt = null;
     }
 
-    Todo.findByIdAndUpdate(id, { $set: body }, { new: true }).then((todo) => {
+    Todo.findOneAndUpdate({ _id: id, creator: req.user._id }, { $set: body }, { new: true }).then((todo) => {
         if (!todo) {
             return res.status(404).send();
         }
-
         res.send({ todo });
     }).catch((e) => {
         res.status(400).send();
-    })
+    });
 });
 
 app.post('/users', (req, res) => {
@@ -145,6 +153,6 @@ app.delete('/users/me/token', authenticate, (req, res) => {
 
 app.listen(port, () => {
     console.log(`App started up at port ${port}`);
-})
+});
 
 module.exports = { app };
